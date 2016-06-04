@@ -10,8 +10,12 @@ if "REDIS_SERVER" in os.environ:
 else:
     r = redis.StrictRedis(host='localhost', port=6379, db=0)
 
+def filter_lambda(t):
+    t = loads(t)
+    return t[2] == False or datetime.datetime.now() - datetime.datetime.strptime(t[1],"%Y-%m-%dT%H:%M:%S.%f") > datetime.timedelta(hours = config['log_time'])
+
 def get_tweets():
-    tweets_from_db = filter(lambda t: loads(t)[2] == False or datetime.datetime.now() - datetime.datetime.strptime(loads(t)[1],"%Y-%m-%dT%H:%M:%S.%f") > datetime.timedelta(hours = config['log_time']), r.lrange('twets.db', 0, -1))
+    tweets_from_db = filter(filter_lambda, r.lrange('twets.db', 0, -1))
     
     txt_tweets = []
     for f in config['brain_tweets']:
