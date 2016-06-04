@@ -1,42 +1,28 @@
 import datetime
 import os
-import sqlite3
+import redis
 import sys
+from simplejson import loads, dumps
 from botconfig import config
 
-dbpath = os.path.join(os.path.dirname(__file__), 'twets.db')
-db = sqlite3.connect(dbpath, detect_types=sqlite3.PARSE_DECLTYPES) 
-db.text_factory = str
+if "REDIS_SERVER" in os.environ:
+    r = redis.from_url(os.environ["REDIS_SERVER"])
+else:
+    r = redis.StrictRedis(host='localhost', port=6379, db=0)
 
 def get_tweets():
-    with db:
-        tweets_from_db = [] 
-        cur = db.cursor()
-        #create the table if it doesn't exist
-        cur.execute("CREATE TABLE IF NOT EXISTS tweets(content TEXT, date TIMESTAMP, ours BOOLEAN)")
-        #get all the tweets!
-        for t in cur.execute('SELECT * FROM tweets'):
-            if t[2] == False or datetime.datetime.now() - t[1] > datetime.timedelta(hours = config['log_time']):
-                tweets_from_db.append(str(t[0]))
-        #list to hold tweets from txt files
-        txt_tweets = []
-        #open the file used to prime the brain
-        for f in config['brain_tweets']:
-            #shove those pieces of shit into a list
-            txt_tweets += [line.strip() for line in openfile(f)]
-        #return both lists combined
-        return tweets_from_db + txt_tweets
+    tweets_from_db = filter(lambda t: loads(t)[2] == False or datetime.datetime.now() - datetime.datetime.strptime(loads(t)[1],"%Y-%m-%dT%H:%M:%S.%f") > datetime.timedelta(hours = config['log_time']), r.lrange('twets.db', 0, -1))
+    
+    txt_tweets = []
+    for f in config['brain_tweets']:
+        #shove those pieces of shit into a list
+        txt_tweets += [line.strip() for line in openfile(f)]
+        
+    return tweets_from_db + txt_tweets
 
 def insert_tweet(content, ours=True):
-    with db:
-        cur = db.cursor()
-        #create the table if it doesn't exist
-        cur.execute("CREATE TABLE IF NOT EXISTS tweets(content TEXT, date TIMESTAMP, ours BOOLEAN)")
-        #prepare and insert the tweet
-        t = [content, datetime.datetime.now(), ours]
-        cur.execute("INSERT INTO tweets VALUES (?,?, ?)", t)
-
-        
+    t = [content, datetime.datetime.now(), ours]
+    r.rpush('twets.db', dumps(t, default=datetime.datetime.isoformat))
 
 def openfile(path):
     #note: i don't actually know if you have to close + reopen a file to change the mode soooo

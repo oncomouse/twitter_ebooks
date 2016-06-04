@@ -4,13 +4,14 @@ from botconfig import config
 from twitter import *
 from simplejson import loads, dumps
 import string
+import redis
 
 parser = argparse.ArgumentParser(description="Checks for recent unanswered @mentions and replies to them individually")
 parser.add_argument('-o', '--stdout', action='store_true', help="Shows replies without actually sending to twitter")
 args = parser.parse_args()
 
 try:
-    state = loads(open(os.path.join(os.path.dirname(__file__), '.state'), 'r').read())
+    state = loads(r.get(os.path.join(os.path.dirname(__file__), '.state')))
 except:
     state = {}
 
@@ -63,4 +64,4 @@ if config['replies']:
         state['last_reply'] = str(last_tweet)
         print "Saving state"
 
-open(os.path.join(os.path.dirname(__file__), '.state'), 'w').write(dumps(state))
+r.set(os.path.join(os.path.dirname(__file__), '.state'), dumps(state))

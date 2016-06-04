@@ -2,7 +2,6 @@
 .state
 bin/
 *.pyc
-cobe.*
 include/lib
 *.csv
 twets.db

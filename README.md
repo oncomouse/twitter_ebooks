@@ -1,21 +1,18 @@
-#twitter_ebooks
+# twitter_ebooks-REDIS
 
-This is an update to https://github.com/clonepa/twitter_ebooks, which is an update to postcasio's version, which is an update to thom's version.
+This is an update to https://github.com/patrickt/twitter_ebooks, which is an update to postcasio's version, which is an update to thom's version.
 
 Non-standard twitter dependencies:
 * python-Levenshtein - http://pypi.python.org/pypi/python-Levenshtein/
 * cobe - https://github.com/pteichman/cobe
 * twitter - https://pypi.python.org/pypi/twitter
 * yaml – http://pyyaml.org
+* redis-py
 * simplejson
 
 Use `pip` and `virtualenv` and you can install them all automatically and without clobbering existing features.
 
-This update comes with some new features:
-- Centralized Tweeting Code
-- Now matches identical tweets (happens often if you have small amounts of initial tweet data.)
-- Option in the configuration file to filter URLs
-- Feed greptweet.com text files directly to process.py and it removes all the junk for you automatically for easier setup
+This version uses REDIS for data storage instead of a series of .txt files and an SQLite3 database for state and history storage. Doing so means you can run this _ebooks account on Heroku, if you want.
 
 ###REQUIREMENTS
 
@@ -65,20 +62,10 @@ Your bot is now ready! test it locally (this won't tweet anything) with:
 When this is to your liking, you can do a final 'live' test by doing:
 `python twert.py`
 
+### UPLOAD TO HEROKU
+
+You can now upload your bot to Heroku.
+
 ###AUTOMATE YOUR ROBOT
 
-Chuck this into your crontab:
-
-    0 * * * * python ~/twitter_ebooks/twert.py > /dev/null
-    0,30 * * * * python ~/twitter_ebooks/reply.py > /dev/null
-    0 0 * * * python ~/twitter_ebooks/learn.py > /dev/null
-
-**REMEMBER THAT THE DIRECTORIES GIVEN ARE EXAMPLES AND THAT YOU NEED TO CHANGE THEM TO REFLECT WHERE THE SCRIPT AND BRAIN ACTUALLY ARE**
-
-If you use Arch Linux, use python2 instead of python.
-
-These directives will make the bot tweet once an hour, reply to tweets twice an hour, and learn new tweets once a day at midnight. Look up how cron works if you want to change this.
-
-(I removed the instructions on how to replace crontab intentionally so you don't end up deleting your existing cron jobs. Look this up if you're not sure how to do it please.)
-
-> "Your bot is ready! Go retweet it or something, NERD"
+Use the [Heroku Scheduler](https://devcenter.heroku.com/articles/scheduler) to run `python twert.py` every hour and `python reply.py` every 10 minutes in order to handle tweeting and replying.
